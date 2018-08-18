@@ -51,6 +51,7 @@ DJANGO_APPS = [
 EXTERNAL_APPS = [
     'bakery',
     'compressor',
+    'bootstrap4',
     'djangoformsetjs',
     'jquery',
     'rest_framework',
@@ -70,8 +71,8 @@ LOCAL_APPS = [
     'pretalx.orga',
 ]
 FALLBACK_APPS = [
-    'bootstrap4',
     'django.forms',
+    'djangosaml2',
 ]
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + LOCAL_APPS + FALLBACK_APPS
 
@@ -237,6 +238,7 @@ if HAS_MEMCACHED:
     }
 
 HAS_REDIS = config.get('redis', 'location') != 'False'
+print(HAS_REDIS)
 if HAS_REDIS:
     CACHES['redis'] = {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -305,11 +307,16 @@ FORMAT_MODULE_PATH = [
 
 ## AUTHENTICATION SETTINGS
 AUTH_USER_MODEL = 'person.User'
-LOGIN_URL = '/orga/login'
+#LOGIN_URL = '/orga/login'
 AUTHENTICATION_BACKENDS = (
     'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'djangosaml2.backends.Saml2Backend',
 )
+
+LOGIN_URL = '/saml2/login/'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',

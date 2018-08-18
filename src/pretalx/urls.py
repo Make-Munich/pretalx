@@ -6,6 +6,9 @@ from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 
+from djangosaml2 import views as djangosaml2_views
+from django.contrib.auth.decorators import login_required
+
 plugin_patterns = []
 for app in apps.get_app_configs():
     if hasattr(app, 'PretalxPluginMeta'):
@@ -19,11 +22,15 @@ for app in apps.get_app_configs():
             )
 
 urlpatterns = [
+    url(r'^saml2/', include('djangosaml2.urls')),
+    url(r'^saml2test/', djangosaml2_views.echo_attributes, name='echo_attributes'),
+
     url(r'^orga/', include('pretalx.orga.urls', namespace='orga')),
     url(r'^api/', include('pretalx.api.urls', namespace='api')),
     url(r'', include('pretalx.agenda.urls', namespace='agenda')),
     url(r'', include('pretalx.cfp.urls', namespace='cfp')),
     url(r'', include((plugin_patterns, 'plugins'))),
+
 ]
 
 if settings.DEBUG:
