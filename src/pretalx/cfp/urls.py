@@ -1,5 +1,5 @@
 from django.conf.urls import include, url
-
+from django.contrib.auth.decorators import login_required
 from pretalx.event.models.event import SLUG_CHARS
 
 from .views import auth, event, locale, robots, user, wizard
@@ -23,7 +23,7 @@ urlpatterns = [
 
         url('^me$', user.ProfileView.as_view(), name='event.user.view'),
         url('^me/delete$', user.DeleteAccountView.as_view(), name='event.user.delete'),
-        url('^me/submissions$', user.SubmissionsListView.as_view(), name='event.user.submissions'),
+        url('^me/submissions$', login_required(user.SubmissionsListView.as_view()), name='event.user.submissions'),
         url('^me/submissions/(?P<code>[\w-]+)/', include([
             url('^$', user.SubmissionsEditView.as_view(),
                 name='event.user.submission.edit'),
