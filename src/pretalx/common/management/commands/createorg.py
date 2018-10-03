@@ -1,7 +1,6 @@
 ﻿from urllib.parse import urljoin
 
 from django.conf import settings
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.urls import reverse
@@ -9,15 +8,6 @@ from django.utils.translation import ugettext as _
 
 from pretalx.event.utils import create_organiser_with_user
 from pretalx.person.models import User
-
-
-def get_nonempty(prompt):
-    result = input(prompt).strip()
-    while not result:
-        result = input(
-            _('This value is required, please enter some value to proceed: ')
-        )
-    return result
 
 
 class Command(BaseCommand):
