@@ -1,9 +1,0 @@
-beautifulsoup4
-isort
-lxml
-potypo
-pylama
-pytest
-pytest-cov
-pytest-django
-pytest-mock

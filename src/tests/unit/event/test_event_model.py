@@ -87,6 +87,8 @@ def test_event_copy_settings(event, submission_type, with_url):
     if with_url:
         event.settings.custom_domain = 'https://testeventcopysettings.example.org'
     event.settings.random_value = 'testcopysettings'
+    event.accept_template.text = 'testtemplate'
+    event.accept_template.save()
     new_event = Event.objects.create(
         organiser=event.organiser, locale_array='de,en',
         name='Teh Name', slug='tn', timezone='Europe/Berlin',
@@ -99,6 +101,7 @@ def test_event_copy_settings(event, submission_type, with_url):
     new_event.copy_data_from(event)
     assert new_event.submission_types.count() == event.submission_types.count()
     assert new_event.accept_template
+    assert new_event.accept_template.text == 'testtemplate'
     assert new_event.settings.random_value == 'testcopysettings'
     assert not new_event.settings.custom_domain
 
@@ -117,3 +120,11 @@ def test_event_urls_custom(event):
     event.settings.custom_domain = custom
     assert custom in event.urls.submit.full()
     assert custom not in event.orga_urls.cfp.full()
+
+
+@pytest.mark.django_db
+def test_event_model_talks(slot, other_slot, accepted_submission, submission, rejected_submission):
+    event = slot.submission.event
+    other_slot.submission.speakers.add(slot.submission.speakers.first())
+    assert len(event.talks.all()) == len(set(event.talks.all()))
+    assert len(event.speakers.all()) == len(set(event.speakers.all()))

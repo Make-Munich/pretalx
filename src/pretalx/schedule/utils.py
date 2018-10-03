@@ -6,9 +6,7 @@ from django.db import transaction
 
 from pretalx.person.models import SpeakerProfile, User
 from pretalx.schedule.models import Room, TalkSlot
-from pretalx.submission.models import (
-    Submission, SubmissionStates, SubmissionType,
-)
+from pretalx.submission.models import Submission, SubmissionStates, SubmissionType
 
 
 @transaction.atomic()
@@ -28,6 +26,11 @@ def process_frab(root, event):
         raise Exception(f'Could not import "{event.name}" schedule version "{schedule_version}": failed creating schedule release.')
 
     schedule.talks.update(is_visible=True)
+    start = schedule.talks.order_by('start').first().start
+    end = schedule.talks.order_by('-end').first().end
+    event.date_from = start.date()
+    event.date_to = end.date()
+    event.save()
     return f'Successfully imported "{event.name}" schedule version "{schedule_version}".'
 
 
@@ -77,9 +80,9 @@ def _create_talk(*, talk, room, event):
     sub.save()
 
     for person in talk.find('persons').findall('person'):
-        user = User.objects.filter(nick=person.text[:60]).first()
+        user = User.objects.filter(name=person.text[:60]).first()
         if not user:
-            user = User(nick=person.text[:60], name=person.text, email=f'{person.text}@localhost')
+            user = User(name=person.text, email=f'{person.text}@localhost')
             user.save()
             SpeakerProfile.objects.create(user=user, event=event)
         sub.speakers.add(user)

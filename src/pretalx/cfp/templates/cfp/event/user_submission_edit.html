@@ -121,7 +121,7 @@
             {% blocktrans trimmed %}
                 If you need a review from a colleague or a friend here's a link that you can send out for viewing your submission:
             {% endblocktrans %}
-            <a target="_blank" href="{{ submission.urls.review.full }}">{{ submission.urls.review.full }}</a>
+            <a target="_blank" rel="noopener" href="{{ submission.urls.review.full }}">{{ submission.urls.review.full }}</a>
         </p>
         <h3>{% trans "Withdraw submission" %}</h3>
         <p>
@@ -148,7 +148,7 @@
         </p>
     {% endif %}
 
-    <div class="user-logs">
+    <div class="user-logs history-sidebar">
         {% include "common/logs.html" with entries=submission.logged_actions hide_orga="true" %}
     </div>
 {% endblock %}

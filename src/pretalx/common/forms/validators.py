@@ -7,7 +7,7 @@ from pretalx.common.phrases import phrases
 
 class ZXCVBNValidator:
     code = 'password_too_weak'
-    DEFAULT_USER_ATTRIBUTES = ('username', 'first_name', 'last_name', 'email')
+    DEFAULT_USER_ATTRIBUTES = ('first_name', 'last_name', 'email')
 
     def __init__(self, min_score=3, user_attributes=DEFAULT_USER_ATTRIBUTES):
         if not (0 <= min_score <= 4):
@@ -19,12 +19,15 @@ class ZXCVBNValidator:
         return self.validate(value)
 
     def validate(self, password, user=None):
-        user_inputs = [getattr(user, attribute, None) for attribute in self.user_attributes]
+        user_inputs = [
+            getattr(user, attribute, None) for attribute in self.user_attributes
+        ]
         user_inputs = [attr for attr in user_inputs if attr is not None]
         results = zxcvbn(password, user_inputs=user_inputs)
         if results.get('score', 0) < self.min_score:
             feedback = ', '.join(results.get('feedback', {}).get('suggestions', []))
             raise ValidationError(_(feedback), code=self.code, params={})
 
-    def get_help_text(self):
+    @staticmethod
+    def get_help_text():
         return phrases.base.password_too_weak

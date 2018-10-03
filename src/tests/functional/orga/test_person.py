@@ -9,7 +9,6 @@ from django.urls import reverse
     ('aa', 0, 0),
     ('aaa', 0, 0),
     ('Jane S', 1, 0),
-    ('orgauser', 2, 2),
 ))
 @pytest.mark.django_db
 def test_user_typeahead(orga_client, event, speaker, other_orga_user, search, results, orga_results):
@@ -29,7 +28,6 @@ def test_user_typeahead(orga_client, event, speaker, other_orga_user, search, re
     assert orga_content['count'] == orga_results
 
     if results:
-        assert 'nick' in content['results'][0]
         assert 'name' in content['results'][0]
 
 

@@ -4,26 +4,38 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from pretalx.mail.models import MailTemplate, QueuedMail
-from pretalx.submission.models import (
-    Answer, AnswerOption, CfP, Question, Submission,
-)
+from pretalx.submission.models import Answer, AnswerOption, CfP, Question, Submission
 
 LOG_NAMES = {
     'pretalx.cfp.update': _('The CfP has been modified.'),
     'pretalx.event.create': _('The event has been added.'),
     'pretalx.event.update': _('The event was modified.'),
+    'pretalx.event.activate': _('The event was made public.'),
+    'pretalx.event.deactivate': _('The event was deactivated.'),
     'pretalx.event.plugins.enabled': _('A plugin was enabled.'),
     'pretalx.event.plugins.disabled': _('A plugin was disabled.'),
     'pretalx.invite.orga.accept': _('The invitation to the event orga was accepted.'),
     'pretalx.invite.orga.retract': _('An invitation to the event orga was retracted.'),
     'pretalx.invite.orga.send': _('An invitation to the event orga was sent.'),
-    'pretalx.invite.reviewer.retract': _('The invitation to the review team was retracted.'),
+    'pretalx.invite.reviewer.retract': _(
+        'The invitation to the review team was retracted.'
+    ),
     'pretalx.invite.reviewer.send': _('The invitation to the review team was sent.'),
-    'pretalx.event.invite.orga.accept': _('The invitation to the event orga was accepted.'),  # compat
-    'pretalx.event.invite.orga.retract': _('An invitation to the event orga was retracted.'),  # compat
-    'pretalx.event.invite.orga.send': _('An invitation to the event orga was sent.'),  # compat
-    'pretalx.event.invite.reviewer.retract': _('The invitation to the review team was retracted.'),  # compat
-    'pretalx.event.invite.reviewer.send': _('The invitation to the review team was sent.'),  # compat
+    'pretalx.event.invite.orga.accept': _(
+        'The invitation to the event orga was accepted.'
+    ),  # compat
+    'pretalx.event.invite.orga.retract': _(
+        'An invitation to the event orga was retracted.'
+    ),  # compat
+    'pretalx.event.invite.orga.send': _(
+        'An invitation to the event orga was sent.'
+    ),  # compat
+    'pretalx.event.invite.reviewer.retract': _(
+        'The invitation to the review team was retracted.'
+    ),  # compat
+    'pretalx.event.invite.reviewer.send': _(
+        'The invitation to the review team was sent.'
+    ),  # compat
     'pretalx.mail.create': _('An email was modified.'),
     'pretalx.mail.delete': _('A pending email was deleted.'),
     'pretalx.mail.delete_all': _('All pending emails were deleted.'),
@@ -52,7 +64,9 @@ LOG_NAMES = {
     'pretalx.submission.resource.update': _('A submission resource was modified.'),
     'pretalx.submission.speakers.add': _('A speaker was added to the submission.'),
     'pretalx.submission.speakers.invite': _('A speaker was invited to the submission.'),
-    'pretalx.submission.speakers.remove': _('A speaker was removed from the submission.'),
+    'pretalx.submission.speakers.remove': _(
+        'A speaker was removed from the submission.'
+    ),
     'pretalx.submission.unconfirm': _('The submission was unconfirmed.'),
     'pretalx.submission.update': _('The submission was modified.'),
     'pretalx.submission.withdraw': _('The submission was withdrawn.'),
@@ -78,48 +92,38 @@ class ActivityLog(models.Model):
         to='event.Event',
         on_delete=models.PROTECT,
         related_name='log_entries',
-        null=True, blank=True,
+        null=True,
+        blank=True,
     )
     person = models.ForeignKey(
         to='person.User',
         on_delete=models.PROTECT,
         related_name='log_entries',
-        null=True, blank=True,
+        null=True,
+        blank=True,
     )
-    content_type = models.ForeignKey(
-        to=ContentType,
-        on_delete=models.CASCADE,
-    )
-    object_id = models.PositiveIntegerField(
-        db_index=True
-    )
-    content_object = GenericForeignKey(
-        'content_type', 'object_id',
-    )
-    timestamp = models.DateTimeField(
-        auto_now_add=True, db_index=True,
-    )
-    action_type = models.CharField(
-        max_length=200,
-    )
-    data = models.TextField(
-        null=True, blank=True
-    )
+    content_type = models.ForeignKey(to=ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField(db_index=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    action_type = models.CharField(max_length=200)
+    data = models.TextField(null=True, blank=True)
     is_orga_action = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ('-timestamp', )
+        ordering = ('-timestamp',)
 
     def __str__(self):
         """Custom __str__ to help with debugging."""
         event = getattr(self.event, 'slug', 'None')
-        person = getattr(self.person, 'nick', 'None')
+        person = getattr(self.person, 'name', 'None')
         return f'ActivityLog(event={event}, person={person}, content_object={self.content_object}, action_type={self.action_type})'
 
     def display(self):
         response = LOG_NAMES.get(self.action_type)
         if response is None:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f'Unknown log action "{self.action_type}".')
             return self.action_type
@@ -130,6 +134,7 @@ class ActivityLog(models.Model):
             return self.content_object.urls.public
         if isinstance(self.content_object, CfP):
             return self.content_object.urls.public
+        return ''
 
     def get_orga_url(self):
         if isinstance(self.content_object, Submission):
@@ -140,9 +145,10 @@ class ActivityLog(models.Model):
             return self.content_object.question.urls.base
         if isinstance(self.content_object, Answer):
             if self.content_object.submission:
-                return self.content_object.submission.orga_urls.questions
+                return self.content_object.submission.orga_urls.base
             return self.content_object.question.urls.base
         if isinstance(self.content_object, CfP):
             return self.content_object.urls.text
         if isinstance(self.content_object, (MailTemplate, QueuedMail)):
             return self.content_object.urls.base
+        return ''

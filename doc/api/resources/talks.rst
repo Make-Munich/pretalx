@@ -24,8 +24,10 @@ abstract                              string                     The abstract, a
 description                           string                     The description, a more expansive description of the submission's content
 duration                              number                     The talk's duration in minutes, or ``null``
 do_not_record                         boolean                    Indicates if the speaker consent to recordings of their talk
+is_featured                           boolean                    Indicates if the talk is show in the schedule preview / sneak peek
 content_locale                        string                     The language the submission is in, e.g. "en" or "de"
 slot                                  object                     An object with the scheduling details, e.g. ``{"start": …, "end": …, "room": "R101"}`` if they exist.
+answers                               list                       The question answers given by the speakers, if the request was issued by an organiser with permissions
 ===================================== ========================== =======================================================
 
 Endpoints
@@ -68,13 +70,25 @@ Endpoints
             "description": "I will expand upon the properties of the talk, primarily its high quality.",
             "duration": 30,
             "do_not_record": true,
+            "is_featured": false,
             "content_locale": "en",
             "slot": {
               "start": "2017-12-27T10:00:00Z",
               "end": "2017-12-27T10:30:00Z",
               "room": "R101"
             }
-          }
+          },
+          "answers": [
+            {
+              "id": 1,
+              "question": {"id": 1, "question": {"en": "How much do you like green, on a scale from 1-10?"}, "required": false, "target": "submission", "options": []},
+              "answer": "11",
+              "answer_file": null,
+              "submission": "ABCDE",
+              "person": null,
+              "options": []
+            }
+           ]
         ]
       }
 
@@ -113,12 +127,24 @@ Endpoints
         "description": "I will expand upon the properties of the talk, primarily its high quality.",
         "duration": 30,
         "do_not_record": true,
+        "is_featured": false,
         "content_locale": "en",
         "slot": {
           "start": "2017-12-27T10:00:00Z",
           "end": "2017-12-27T10:30:00Z",
           "room": "R101"
-        }
+        },
+        "answers": [
+          {
+            "id": 1,
+            "question": {"id": 1, "question": {"en": "How much do you like green, on a scale from 1-10?"}, "required": false, "target": "submission", "options": []},
+            "answer": "11",
+            "answer_file": null,
+            "submission": "ABCDE",
+            "person": null,
+            "options": []
+          }
+         ]
       }
 
    :param event: The ``slug`` field of the event to fetch

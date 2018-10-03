@@ -1,8 +1,9 @@
 {% extends "orga/base.html" %}
 {% load i18n %}
 
+{% block title %}{% trans "Plugins" %}{% endblock %}
 {% block content %}
-<legend>{% trans "Plugins" %}</legend>
+<h2>{% trans "Plugins" %}</h2>
 
 <form action="" method="post" class="form-horizontal form-plugins">
 	{% csrf_token %}
@@ -33,4 +34,9 @@
         </div>
     {% endfor %}
 </form>
+{% if not plugins %}
+<div class="alert alert-info">
+    {% trans "This instance does currently not have any plugins installed." %}
+</div>
+{% endif %}
 {% endblock %}

@@ -19,22 +19,16 @@ from pretalx.submission.models import SubmissionStates
 
 class Schedule(LogMixin, models.Model):
     event = models.ForeignKey(
-        to='event.Event',
-        on_delete=models.PROTECT,
-        related_name='schedules',
+        to='event.Event', on_delete=models.PROTECT, related_name='schedules'
     )
     version = models.CharField(
-        max_length=190,
-        null=True, blank=True,
-        verbose_name=_('version'),
+        max_length=190, null=True, blank=True, verbose_name=_('version')
     )
-    published = models.DateTimeField(
-        null=True, blank=True
-    )
+    published = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ('-published', )
-        unique_together = (('event', 'version'), )
+        ordering = ('-published',)
+        unique_together = (('event', 'version'),)
 
     class urls(EventUrls):
         public = '{self.event.urls.schedule}/v/{self.url_version}'
@@ -42,10 +36,13 @@ class Schedule(LogMixin, models.Model):
     @transaction.atomic
     def freeze(self, name, user=None, notify_speakers=True):
         from pretalx.schedule.models import TalkSlot
+
         if name in ['wip', 'latest']:
             raise Exception(f'Cannot use reserved name "{name}" for schedule version.')
         if self.version:
-            raise Exception(f'Cannot freeze schedule version: already versioned as "{self.version}".')
+            raise Exception(
+                f'Cannot freeze schedule version: already versioned as "{self.version}".'
+            )
 
         self.version = name
         self.published = now()
@@ -56,7 +53,9 @@ class Schedule(LogMixin, models.Model):
 
         # Set visibility
         self.talks.filter(
-            start__isnull=False, submission__state=SubmissionStates.CONFIRMED, is_visible=False
+            start__isnull=False,
+            submission__state=SubmissionStates.CONFIRMED,
+            is_visible=False,
         ).update(is_visible=True)
         self.talks.filter(is_visible=True).exclude(
             start__isnull=False, submission__state=SubmissionStates.CONFIRMED
@@ -82,14 +81,15 @@ class Schedule(LogMixin, models.Model):
 
     def unfreeze(self, user=None):
         from pretalx.schedule.models import TalkSlot
+
         if not self.version:
             raise Exception('Cannot unfreeze schedule version: not released yet.')
 
         # collect all talks, which have been added since this schedule (#72)
         submission_ids = self.talks.all().values_list('submission_id', flat=True)
-        talks = self.event.wip_schedule.talks \
-            .exclude(submission_id__in=submission_ids) \
-            .union(self.talks.all())
+        talks = self.event.wip_schedule.talks.exclude(
+            submission_id__in=submission_ids
+        ).union(self.talks.all())
 
         wip_schedule = Schedule.objects.create(event=self.event)
         new_talks = []
@@ -108,19 +108,23 @@ class Schedule(LogMixin, models.Model):
     @cached_property
     def scheduled_talks(self):
         return self.talks.filter(
-            room__isnull=False,
-            start__isnull=False,
-            is_visible=True,
+            room__isnull=False, start__isnull=False, is_visible=True
         )
 
     @cached_property
     def slots(self):
         from pretalx.submission.models import Submission
-        return Submission.objects.filter(id__in=self.scheduled_talks.values_list('submission', flat=True))
+
+        return Submission.objects.filter(
+            id__in=self.scheduled_talks.values_list('submission', flat=True)
+        )
 
     @cached_property
     def previous_schedule(self):
-        return self.event.schedules.filter(published__lt=self.published).order_by('-published').first()
+        queryset = self.event.schedules.exclude(pk=self.pk)
+        if self.published:
+            queryset = queryset.filter(published__lt=self.published)
+        return queryset.order_by('-published').first()
 
     @cached_property
     def changes(self):
@@ -138,12 +142,16 @@ class Schedule(LogMixin, models.Model):
 
         new_slots = set(
             talk
-            for talk in self.talks.select_related('submission', 'submission__event', 'room').all()
+            for talk in self.talks.select_related(
+                'submission', 'submission__event', 'room'
+            ).all()
             if talk.is_visible and not talk.submission.is_deleted
         )
         old_slots = set(
             talk
-            for talk in self.previous_schedule.talks.select_related('submission', 'submission__event', 'room').all()
+            for talk in self.previous_schedule.talks.select_related(
+                'submission', 'submission__event', 'room'
+            ).all()
             if talk.is_visible and not talk.submission.is_deleted
         )
 
@@ -153,10 +161,14 @@ class Schedule(LogMixin, models.Model):
         new_slot_by_submission = {talk.submission: talk for talk in new_slots}
         old_slot_by_submission = {talk.submission: talk for talk in old_slots}
 
-        result['new_talks'] = [new_slot_by_submission.get(s) for s in new_submissions - old_submissions]
-        result['canceled_talks'] = [old_slot_by_submission.get(s) for s in old_submissions - new_submissions]
+        result['new_talks'] = [
+            new_slot_by_submission.get(s) for s in new_submissions - old_submissions
+        ]
+        result['canceled_talks'] = [
+            old_slot_by_submission.get(s) for s in old_submissions - new_submissions
+        ]
 
-        for submission in (new_submissions & old_submissions):
+        for submission in new_submissions & old_submissions:
             old_slot = old_slot_by_submission.get(submission)
             new_slot = new_slot_by_submission.get(submission)
             if new_slot.room and not old_slot.room:
@@ -165,29 +177,51 @@ class Schedule(LogMixin, models.Model):
                 result['canceled_talks'].append(new_slot)
             elif old_slot.start != new_slot.start or old_slot.room != new_slot.room:
                 if new_slot.room:
-                    result['moved_talks'].append({
-                        'submission': submission,
-                        'old_start': old_slot.start.astimezone(tz),
-                        'new_start': new_slot.start.astimezone(tz),
-                        'old_room': old_slot.room.name,
-                        'new_room': new_slot.room.name,
-                        'new_info': new_slot.room.speaker_info,
-                    })
+                    result['moved_talks'].append(
+                        {
+                            'submission': submission,
+                            'old_start': old_slot.start.astimezone(tz),
+                            'new_start': new_slot.start.astimezone(tz),
+                            'old_room': old_slot.room.name,
+                            'new_room': new_slot.room.name,
+                            'new_info': new_slot.room.speaker_info,
+                        }
+                    )
 
-        result['count'] = len(result['new_talks']) + len(result['canceled_talks']) + len(result['moved_talks'])
+        result['count'] = (
+            len(result['new_talks'])
+            + len(result['canceled_talks'])
+            + len(result['moved_talks'])
+        )
         return result
 
-    def notify_speakers(self):
+    @cached_property
+    def warnings(self):
+        warnings = {'talk_warnings': [], 'unscheduled': [], 'unconfirmed': []}
+        for talk in self.talks.all():
+            if not talk.start:
+                warnings['unscheduled'].append(talk)
+            elif talk.warnings:
+                warnings['talk_warnings'].append(talk)
+            if talk.submission.state != SubmissionStates.CONFIRMED:
+                warnings['unconfirmed'].append(talk)
+        return warnings
+
+    @cached_property
+    def notifications(self):
         tz = pytz.timezone(self.event.timezone)
         speakers = defaultdict(lambda: {'create': [], 'update': []})
         if self.changes['action'] == 'create':
             speakers = {
-                speaker: {'create': self.talks.filter(submission__speakers=speaker), 'update': []}
+                speaker: {
+                    'create': self.talks.filter(submission__speakers=speaker),
+                    'update': [],
+                }
                 for speaker in User.objects.filter(submissions__slots__schedule=self)
             }
         else:
             if self.changes['count'] == len(self.changes['canceled_talks']):
-                return
+                return []
 
             for new_talk in self.changes['new_talks']:
                 for speaker in new_talk.submission.speakers.all():
@@ -195,18 +229,26 @@ class Schedule(LogMixin, models.Model):
             for moved_talk in self.changes['moved_talks']:
                 for speaker in moved_talk['submission'].speakers.all():
                     speakers[speaker]['update'].append(moved_talk)
+        mails = []
         for speaker in speakers:
             with override(speaker.locale), tzoverride(tz):
                 text = get_template('schedule/speaker_notification.txt').render(
                     {'speaker': speaker, **speakers[speaker]}
                 )
-            QueuedMail.objects.create(
-                event=self.event,
-                to=speaker.email,
-                reply_to=self.event.email,
-                subject=_('New schedule!').format(event=self.event.slug),
-                text=text
+            mails.append(
+                QueuedMail(
+                    event=self.event,
+                    to=speaker.email,
+                    reply_to=self.event.email,
+                    subject=_('New schedule!').format(event=self.event.slug),
+                    text=text,
+                )
             )
+        return mails
+
+    def notify_speakers(self):
+        for notification in self.notifications:
+            notification.save()
 
     @cached_property
     def url_version(self):

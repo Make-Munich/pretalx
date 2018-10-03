@@ -1,21 +1,23 @@
 import datetime
 import json
 
-import django.forms as forms
 import pytz
+from django import forms
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.translation import ugettext_lazy as _
 from i18nfield.forms import I18nModelForm
 
 from pretalx.common.mixins.forms import ReadOnlyFlag
-from pretalx.schedule.models import Availability, Room
+from pretalx.schedule.models import Availability, Room, TalkSlot
 
 
 class AvailabilitiesFormMixin(forms.Form):
     availabilities = forms.CharField(
         label=_('Availability'),
-        help_text=_('Please click and drag to mark the availability during the conference.'),
+        help_text=_(
+            'Please click and drag to mark the availability during the conference.'
+        ),
         widget=forms.TextInput(attrs={'class': 'availabilities-editor-data'}),
         required=False,
     )
@@ -23,25 +25,28 @@ class AvailabilitiesFormMixin(forms.Form):
     def _serialize(self, event, instance):
         if instance:
             availabilities = [
-                avail.serialize()
-                for avail in instance.availabilities.all()
+                avail.serialize() for avail in instance.availabilities.all()
             ]
         else:
             availabilities = []
 
-        return json.dumps({
-            'availabilities': availabilities,
-            'event': {
-                'timezone': event.timezone,
-                'date_from': str(event.date_from),
-                'date_to': str(event.date_to),
+        return json.dumps(
+            {
+                'availabilities': availabilities,
+                'event': {
+                    'timezone': event.timezone,
+                    'date_from': str(event.date_from),
+                    'date_to': str(event.date_to),
+                },
             }
-        })
+        )
 
     def __init__(self, *args, event=None, **kwargs):
         self.event = event
         initial = kwargs.pop('initial', dict())
         initial['availabilities'] = self._serialize(self.event, kwargs['instance'])
+        if not isinstance(self, forms.BaseModelForm):
+            kwargs.pop('instance')
         kwargs['initial'] = initial
         super().__init__(*args, **kwargs)
 
@@ -78,30 +83,45 @@ class AvailabilitiesFormMixin(forms.Form):
             assert 'start' in rawavail
             assert 'end' in rawavail
         except AssertionError:
-            raise forms.ValidationError("Submitted availability does not comply with format.")
+            raise forms.ValidationError(
+                "Submitted availability does not comply with format."
+            )
 
         try:
             rawavail['start'] = self._parse_datetime(rawavail['start'])
             rawavail['end'] = self._parse_datetime(rawavail['end'])
         except (AssertionError, TypeError, ValueError):
-            raise forms.ValidationError("Submitted availability contains an invalid date.")
+            raise forms.ValidationError(
+                "Submitted availability contains an invalid date."
+            )
 
         tz = pytz.timezone(self.event.timezone)
 
         try:
-            timeframe_start = tz.localize(datetime.datetime.combine(self.event.date_from, datetime.time()))
+            timeframe_start = tz.localize(
+                datetime.datetime.combine(self.event.date_from, datetime.time())
+            )
             assert rawavail['start'] >= timeframe_start
-            timeframe_end = tz.localize(datetime.datetime.combine(self.event.date_to, datetime.time()))
-            timeframe_end += datetime.timedelta(days=1)
+
+            # add 1 day, not 24 hours, https://stackoverflow.com/a/25427822/2486196
+            timeframe_end = datetime.datetime.combine(
+                self.event.date_to, datetime.time()
+            )
+            timeframe_end = timeframe_end + datetime.timedelta(days=1)
+            timeframe_end = tz.localize(timeframe_end, is_dst=None)
             assert rawavail['end'] <= timeframe_end
         except AssertionError:
-            raise forms.ValidationError("Submitted availability is not within the event timeframe.")
+            raise forms.ValidationError(
+                "Submitted availability is not within the event timeframe."
+            )
 
     def clean_availabilities(self):
         if self.cleaned_data['availabilities'] == '':
             return None
 
-        rawavailabilities = self._parse_availabilities_json(self.cleaned_data['availabilities'])
+        rawavailabilities = self._parse_availabilities_json(
+            self.cleaned_data['availabilities']
+        )
         availabilities = []
 
         for rawavail in rawavailabilities:
@@ -135,18 +155,55 @@ class AvailabilitiesFormMixin(forms.Form):
             self._set_foreignkeys(instance, availabilities)
             self._replace_availabilities(instance, availabilities)
 
-        return instance
+        return availabilities
 
 
 class RoomForm(AvailabilitiesFormMixin, ReadOnlyFlag, I18nModelForm):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['name'].widget.attrs['placeholder'] = _('Room I')
-        self.fields['description'].widget.attrs['placeholder'] = _('Description, e.g.: Our main meeting place, Room I, enter from the right.')
-        self.fields['speaker_info'].widget.attrs['placeholder'] = _('Information for speakers, e.g.: Projector has only HDMI input.')
+        self.fields['description'].widget.attrs['placeholder'] = _(
+            'Description, e.g.: Our main meeting place, Room I, enter from the right.'
+        )
+        self.fields['speaker_info'].widget.attrs['placeholder'] = _(
+            'Information for speakers, e.g.: Projector has only HDMI input.'
+        )
         self.fields['capacity'].widget.attrs['placeholder'] = '300'
 
     class Meta:
         model = Room
-        fields = ['name', 'description', 'speaker_info', 'capacity', 'position']
+        fields = ['name', 'description', 'speaker_info', 'capacity']
+
+
+class QuickScheduleForm(forms.ModelForm):
+    start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    start_time = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}))
+
+    def __init__(self, event, *args, **kwargs):
+        self.event = event
+        super().__init__(*args, **kwargs)
+        self.fields['room'].queryset = self.event.rooms.all()
+        if self.instance.start:
+            self.fields['start_date'].initial = self.instance.start.date()
+            self.fields['start_time'].initial = self.instance.start.time()
+        else:
+            self.fields['start_date'].initial = event.date_from
+
+    def save(self):
+        if not self.instance:
+            raise Exception
+        talk = self.instance
+        tz = pytz.timezone(self.event.timezone)
+        talk.start = tz.localize(
+            datetime.datetime.combine(
+                self.cleaned_data['start_date'], self.cleaned_data['start_time']
+            )
+        )
+        talk.end = talk.start + datetime.timedelta(
+            minutes=talk.submission.get_duration()
+        )
+        return super().save()
+
+    class Meta:
+        model = TalkSlot
+        fields = ('room',)

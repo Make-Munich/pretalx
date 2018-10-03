@@ -13,6 +13,8 @@ Core
 .. automodule:: pretalx.common.signals
    :members: periodic_task
 
+.. automodule:: pretalx.submission.signals
+   :members: submission_state_change
 
 Exporters
 ---------
@@ -25,7 +27,7 @@ Organiser area
 --------------
 
 .. automodule:: pretalx.orga.signals
-   :members: nav_event
+   :members: nav_event, nav_global, activate_event
 
 Display
 -------

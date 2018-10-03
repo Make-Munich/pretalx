@@ -1,12 +1,10 @@
 import os
-import sys
 from contextlib import suppress
 from urllib.parse import urlparse
 
-import django
-from django.contrib.messages import constants as messages  # NOQA
+from django.contrib.messages import constants as messages
 from django.utils.crypto import get_random_string
-from django.utils.translation import ugettext_lazy as _  # NOQA
+from django.utils.translation import ugettext_lazy as _
 from pkg_resources import iter_entry_points
 
 from pretalx.common.settings.config import build_config
@@ -29,15 +27,22 @@ DEBUG = config.getboolean('site', 'debug')
 
 ## DIRECTORY SETTINGS
 BASE_DIR = config.get('filesystem', 'base')
-DATA_DIR = config.get('filesystem', 'data', fallback=os.environ.get('PRETALX_DATA_DIR', os.path.join(BASE_DIR, 'data')))
+DATA_DIR = config.get(
+    'filesystem',
+    'data',
+    fallback=os.environ.get('PRETALX_DATA_DIR', os.path.join(BASE_DIR, 'data')),
+)
 LOG_DIR = config.get('filesystem', 'logs', fallback=os.path.join(DATA_DIR, 'logs'))
 MEDIA_ROOT = config.get('filesystem', 'media', fallback=os.path.join(DATA_DIR, 'media'))
-STATIC_ROOT = config.get('filesystem', 'static', fallback=os.path.join(BASE_DIR, 'static.dist'))
-HTMLEXPORT_ROOT = config.get('filesystem', 'htmlexport', fallback=os.path.join(DATA_DIR, 'htmlexport'))
+STATIC_ROOT = config.get(
+    'filesystem', 'static', fallback=os.path.join(BASE_DIR, 'static.dist')
+)
+HTMLEXPORT_ROOT = config.get(
+    'filesystem', 'htmlexport', fallback=os.path.join(DATA_DIR, 'htmlexport')
+)
 
 for directory in (BASE_DIR, DATA_DIR, LOG_DIR, MEDIA_ROOT, HTMLEXPORT_ROOT):
-    if not os.path.exists(directory):
-        os.mkdir(directory)
+    os.makedirs(directory, exist_ok=True)
 
 
 ## APP SETTINGS
@@ -85,7 +90,9 @@ for entry_point in iter_entry_points(group='pretalx.plugin', name=None):
 SITE_URL = config.get('site', 'url', fallback='http://localhost')
 SITE_NETLOC = urlparse(SITE_URL).netloc
 INTERNAL_IPS = ('127.0.0.1', '::1')
-ALLOWED_HOSTS = ['*']  # We have our own security middleware to allow for custom event URLs
+ALLOWED_HOSTS = [
+    '*'
+]  # We have our own security middleware to allow for custom event URLs
 
 ROOT_URLCONF = 'pretalx.urls'
 STATIC_URL = '/static/'
@@ -97,18 +104,21 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-CSP_DEFAULT_SRC = ("'self'")
+CSP_DEFAULT_SRC = "'self'"
 CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_IMG_SRC = ("'self'", "data:")
 
 CSRF_COOKIE_NAME = 'pretalx_csrftoken'
+CSRF_TRUSTED_ORIGINS = [urlparse(SITE_URL).hostname]
 SESSION_COOKIE_NAME = 'pretalx_session'
 SESSION_COOKIE_HTTPONLY = True
 if config.get('site', 'cookie_domain'):
     SESSION_COOKIE_DOMAIN = CSRF_COOKIE_DOMAIN = config.get('site', 'cookie_domain')
 
-SESSION_COOKIE_SECURE = config.getboolean('site', 'https', fallback=SITE_URL.startswith('https:'))
+SESSION_COOKIE_SECURE = config.getboolean(
+    'site', 'https', fallback=SITE_URL.startswith('https:')
+)
 
 if config.has_option('site', 'secret'):
     SECRET_KEY = config.get('site', 'secret')
@@ -132,7 +142,8 @@ db_name = config.get('database', 'name', fallback=os.path.join(DATA_DIR, 'db.sql
 if db_backend == 'mysql':
     db_opts = {
         'charset': 'utf8mb4',
-        'init_command': 'SET character_set_connection=utf8mb4,collation_connection=utf8mb4_unicode_ci;'
+        'use_unicode': True,
+        'init_command': 'SET character_set_connection=utf8mb4,collation_connection=utf8mb4_unicode_ci;',
     }
 else:
     db_opts = {}
@@ -145,7 +156,7 @@ DATABASES = {
         'HOST': config.get('database', 'host'),
         'PORT': config.get('database', 'port'),
         'CONN_MAX_AGE': 0 if db_backend == 'sqlite3' else 120,
-        'OPTIONS': db_opts
+        'OPTIONS': db_opts,
     }
 }
 
@@ -158,27 +169,23 @@ LOGGING = {
     'formatters': {
         'default': {
             'format': '%(levelname)s %(asctime)s %(name)s %(module)s %(message)s'
-        },
+        }
     },
     'handlers': {
         'console': {
             'level': loglevel,
             'class': 'logging.StreamHandler',
-            'formatter': 'default'
+            'formatter': 'default',
         },
         'file': {
             'level': loglevel,
             'class': 'logging.FileHandler',
             'filename': os.path.join(LOG_DIR, 'pretalx.log'),
-            'formatter': 'default'
+            'formatter': 'default',
         },
     },
     'loggers': {
-        '': {
-            'handlers': ['file', 'console'],
-            'level': loglevel,
-            'propagate': True,
-        },
+        '': {'handlers': ['file', 'console'], 'level': loglevel, 'propagate': True},
         'django.request': {
             'handlers': ['file', 'console'],
             'level': loglevel,
@@ -193,7 +200,7 @@ LOGGING = {
             'handlers': ['file', 'console'],
             'level': 'INFO',  # Do not output all the queries
             'propagate': True,
-        }
+        },
     },
 }
 
@@ -221,11 +228,7 @@ else:
 
 
 ## CACHE SETTINGS
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-    }
-}
+CACHES = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 REAL_CACHE_USED = False
 SESSION_ENGINE = None
 
@@ -234,7 +237,7 @@ if HAS_MEMCACHED:
     REAL_CACHE_USED = True
     CACHES['default'] = {
         'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-        'LOCATION': os.getenv('PRETALX_MEMCACHE')
+        'LOCATION': os.getenv('PRETALX_MEMCACHE'),
     }
 
 HAS_REDIS = config.get('redis', 'location') != 'False'
@@ -243,17 +246,13 @@ if HAS_REDIS:
     CACHES['redis'] = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": config.get('redis', 'location'),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     }
     CACHES['redis_sessions'] = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": config.get('redis', 'location'),
         "TIMEOUT": 3600 * 24 * 30,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     }
     if not HAS_MEMCACHED:
         CACHES['default'] = CACHES['redis']
@@ -288,21 +287,12 @@ MESSAGE_TAGS = {
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-LANGUAGES = [
-    ('en', _('English')),
-    ('de', _('German')),
-]
-LANGUAGES_NATURAL_NAMES = [
-    ('en', 'English'),
-    ('de', 'Deutsch'),
-]
+LANGUAGES = [('en', _('English')), ('de', _('German')), ('fr', _('French'))]
+LANGUAGES_NATURAL_NAMES = [('en', 'English'), ('de', 'Deutsch'), ('fr', 'Français')]
 LANGUAGE_CODE = 'en'
-LOCALE_PATHS = (
-    os.path.join(os.path.dirname(__file__), 'locale'),
-)
-FORMAT_MODULE_PATH = [
-    'pretalx.common.formats',
-]
+LANGUAGES_OFFICIAL = {'en', 'de'}
+LOCALE_PATHS = (os.path.join(os.path.dirname(__file__), 'locale'),)
+FORMAT_MODULE_PATH = ['pretalx.common.formats']
 
 
 ## AUTHENTICATION SETTINGS
@@ -311,6 +301,7 @@ AUTH_USER_MODEL = 'person.User'
 AUTHENTICATION_BACKENDS = (
     'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'pretalx.common.auth.AuthenticationTokenBackend',
     'djangosaml2.backends.Saml2Backend',
 )
 
@@ -319,17 +310,11 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
     },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 
@@ -340,6 +325,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',  # Set some sensible defaults, now, before responses are modified
     'pretalx.common.middleware.SessionMiddleware',  # Add session handling
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # Uses sessions
+    'pretalx.common.auth.AuthenticationTokenMiddleware',  # Make auth tokens work
     'pretalx.common.middleware.MultiDomainMiddleware',  # Check which host is used and if it is valid
     'pretalx.common.middleware.EventPermissionMiddleware',  # Sets locales, request.event, available events, etc.
     'pretalx.common.middleware.CsrfViewMiddleware',  # Protect against CSRF attacks before forms/data are processed
@@ -355,9 +341,7 @@ template_loaders = (
     'django.template.loaders.app_directories.Loader',
 )
 if not DEBUG:
-    template_loaders = (
-        ('django.template.loaders.cached.Loader', template_loaders),
-    )
+    template_loaders = (('django.template.loaders.cached.Loader', template_loaders),)
 
 FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 TEMPLATES = [
@@ -366,7 +350,6 @@ TEMPLATES = [
         'DIRS': [
             os.path.join(DATA_DIR, 'templates'),
             os.path.join(BASE_DIR, 'templates'),
-            # os.path.join(django.__path__[0], '/forms/templates'),
         ],
         'OPTIONS': {
             'context_processors': [
@@ -384,9 +367,9 @@ TEMPLATES = [
                 'pretalx.common.context_processors.system_information',
                 'pretalx.orga.context_processors.orga_events',
             ],
-            'loaders': template_loaders
+            'loaders': template_loaders,
         },
-    },
+    }
 ]
 
 STATICFILES_FINDERS = (
@@ -394,9 +377,11 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     'compressor.finders.CompressorFinder',
 )
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'pretalx', 'static')
-] if os.path.exists(os.path.join(BASE_DIR, 'pretalx', 'static')) else []
+STATICFILES_DIRS = (
+    [os.path.join(BASE_DIR, 'pretalx', 'static')]
+    if os.path.exists(os.path.join(BASE_DIR, 'pretalx', 'static'))
+    else []
+)
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -404,9 +389,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 ## EXTERNAL APP SETTINGS
 with suppress(ImportError):
     import django_extensions  # noqa
+
     INSTALLED_APPS.append('django_extensions')
 with suppress(ImportError):
     import debug_toolbar  # noqa
+
     if DEBUG:
         INSTALLED_APPS.append('debug_toolbar.apps.DebugToolbarConfig')
         MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
@@ -416,16 +403,12 @@ BOOTSTRAP4 = {
         'inline': 'bootstrap4.renderers.InlineFieldRenderer',
         'event': 'pretalx.common.forms.renderers.EventFieldRenderer',
         'event-inline': 'pretalx.common.forms.renderers.EventInlineFieldRenderer',
-    },
+    }
 }
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
-DEBUG_TOOLBAR_CONFIG = {
-    'JQUERY_URL': '',
-}
+DEBUG_TOOLBAR_CONFIG = {'JQUERY_URL': ''}
 COMPRESS_ENABLED = COMPRESS_OFFLINE = not DEBUG
-COMPRESS_PRECOMPILERS = (
-    ('text/x-scss', 'django_libsass.SassCompiler'),
-)
+COMPRESS_PRECOMPILERS = (('text/x-scss', 'django_libsass.SassCompiler'),)
 COMPRESS_CSS_FILTERS = (
     # CssAbsoluteFilter is incredibly slow, especially when dealing with our _flags.scss
     # However, we don't need it if we consequently use the static() function in Sass
@@ -464,15 +447,17 @@ REST_FRAMEWORK = {
     'VERSIONING_PARAM': 'v',
 }
 if DEBUG:
-    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] += ('rest_framework.renderers.BrowsableAPIRenderer',)
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] += (
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
     REST_FRAMEWORK['COMPACT_JSON'] = False
 
 WSGI_APPLICATION = 'pretalx.wsgi.application'
 log_initial(
-    DEBUG=DEBUG,
+    debug=DEBUG,
     config_files=config_files,
     db_name=db_name,
     db_backend=db_backend,
     LOG_DIR=LOG_DIR,
-    plugins=PLUGINS
+    plugins=PLUGINS,
 )
