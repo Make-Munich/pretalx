@@ -43,8 +43,8 @@ urlpatterns = [
                 ),
                 url(
                     '^me/submissions$',
-                    login_required(user.SubmissionsListView.as_view(),
-                    name='event.user.submissions'),
+                    login_required(user.SubmissionsListView.as_view()),
+                    name='event.user.submissions',
                 ),
                 url(
                     r'^me/submissions/(?P<code>[\w-]+)/',
