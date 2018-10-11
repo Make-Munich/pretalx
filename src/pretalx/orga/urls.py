@@ -33,6 +33,7 @@ urlpatterns = [
 
     url(f'^event/(?P<event>[{SLUG_CHARS}]+)/', include([
         url('^$', dashboard.EventDashboardView.as_view(), name='event.dashboard'),
+        url('^live$', event.EventLive.as_view(), name='event.live'),
         url('^api/users$', person.UserList.as_view(), name='event.user_list'),
         url('^api/urls/$', dashboard.url_list, name='url_list'),
 
@@ -40,6 +41,8 @@ urlpatterns = [
         url('^cfp/questions/new$', cfp.CfPQuestionDetail.as_view(), name='cfp.questions.create'),
         url('^cfp/questions/remind$', cfp.CfPQuestionRemind.as_view(), name='cfp.questions.remind'),
         url('^cfp/questions/(?P<pk>[0-9]+)$', cfp.CfPQuestionDetail.as_view(), name='cfp.question.view'),
+        url('^cfp/questions/(?P<pk>[0-9]+)/up$', cfp.question_move_up, name='cfp.questions.up'),
+        url('^cfp/questions/(?P<pk>[0-9]+)/down$', cfp.question_move_down, name='cfp.questions.down'),
         url('^cfp/questions/(?P<pk>[0-9]+)/delete$', cfp.CfPQuestionDelete.as_view(), name='cfp.question.delete'),
         url('^cfp/questions/(?P<pk>[0-9]+)/edit$', cfp.CfPQuestionDetail.as_view(), name='cfp.question.edit'),
         url('^cfp/questions/(?P<pk>[0-9]+)/toggle$', cfp.CfPQuestionToggle.as_view(), name='cfp.question.toggle'),
@@ -78,8 +81,6 @@ urlpatterns = [
             url('^withdraw$', submission.SubmissionStateChange.as_view(), name='submissions.withdraw'),
             url('^delete', submission.SubmissionStateChange.as_view(), name='submissions.delete'),
             url('^cancel', submission.SubmissionStateChange.as_view(), name='submissions.cancel'),
-            url('^questions$', submission.SubmissionQuestions.as_view(), name='submissions.questions.view'),
-            url('^questions/edit$', submission.SubmissionQuestions.as_view(), name='submissions.questions.edit'),
             url('^speakers$', submission.SubmissionSpeakers.as_view(), name='submissions.speakers.view'),
             url('^speakers/add$', submission.SubmissionSpeakersAdd.as_view(), name='submissions.speakers.add'),
             url('^speakers/delete$', submission.SubmissionSpeakersDelete.as_view(), name='submissions.speakers.delete'),
@@ -91,11 +92,12 @@ urlpatterns = [
 
         url('^speakers$', speaker.SpeakerList.as_view(), name='speakers.list'),
         url('^speakers/(?P<pk>[0-9]+)$', speaker.SpeakerDetail.as_view(), name='speakers.view'),
+        url('^speakers/(?P<pk>[0-9]+)/reset$', speaker.SpeakerPasswordReset.as_view(), name='speakers.reset'),
         url('^speakers/(?P<pk>[0-9]+)/toggle-arrived$', speaker.SpeakerToggleArrived.as_view(), name='speakers.arrived'),
         url('^info$', speaker.InformationList.as_view(), name='speakers.information.list'),
         url('^info/new$', speaker.InformationDetail.as_view(), name='speakers.information.create'),
         url('^info/(?P<pk>[0-9]+)$', speaker.InformationDetail.as_view(), name='speakers.information.view'),
-        url('^info/(?P<pk>[0-9]+)/delete$', speaker.InformationDelete.as_view(), name='speakers.information.delete'),
+        url('^info/(?P<pk>[0-9]+)/delete/$', speaker.InformationDelete.as_view(), name='speakers.information.delete'),
 
         url('^reviews$', review.ReviewDashboard.as_view(), name='reviews.dashboard'),
 
@@ -117,12 +119,15 @@ urlpatterns = [
         url('^schedule/export/trigger$', schedule.ScheduleExportTriggerView.as_view(), name='schedule.export.trigger'),
         url('^schedule/export/download$', schedule.ScheduleExportDownloadView.as_view(), name='schedule.export.download'),
         url('^schedule/release$', schedule.ScheduleReleaseView.as_view(), name='schedule.release'),
+        url(r'^schedule/quick/(?P<code>\w+)/$', schedule.QuickScheduleView.as_view(), name='schedule.quick'),
         url('^schedule/reset$', schedule.ScheduleResetView.as_view(), name='schedule.reset'),
         url('^schedule/toggle$', schedule.ScheduleToggleView.as_view(), name='schedule.toggle'),
         url('^schedule/rooms$', schedule.RoomList.as_view(), name='schedule.rooms.list'),
         url('^schedule/rooms/new$', schedule.RoomDetail.as_view(), name='schedule.rooms.create'),
         url('^schedule/rooms/(?P<pk>[0-9]+)$', schedule.RoomDetail.as_view(), name='schedule.rooms.view'),
         url('^schedule/rooms/(?P<pk>[0-9]+)/delete$', schedule.RoomDelete.as_view(), name='schedule.rooms.delete'),
+        url('^schedule/rooms/(?P<pk>[0-9]+)/up$', schedule.room_move_up, name='schedule.rooms.up'),
+        url('^schedule/rooms/(?P<pk>[0-9]+)/down$', schedule.room_move_down, name='schedule.rooms.down'),
         url('^schedule/api/rooms/$', schedule.RoomListApi.as_view(), name='schedule.api.rooms'),
         url('^schedule/api/talks/$', schedule.TalkList.as_view(), name='schedule.api.talks'),
         url('^schedule/api/talks/(?P<pk>[0-9]+)/$', schedule.TalkUpdate.as_view(), name='schedule.api.update'),

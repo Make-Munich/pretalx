@@ -6,14 +6,14 @@
 
 {% block content %}
 {% has_perm 'orga.change_speaker' request.user form.instance as can_edit_speaker %}
-    <legend>
+    <h2>
         {{ form.instance.user.get_display_name }} ({{ submission_count }}
         {% blocktrans trimmed count count=submission_count %}
         submission
         {% plural %}
         submissions
         {% endblocktrans %})
-    </legend>
+    </h2>
     <div class="alert alert-info col-md-9 ml-auto">
         <span>
         <h5>{% if submission_count > 1 %}{% trans "Submissions" %}{% else %}{% trans "Submission" %}{% endif %}</h5>
@@ -54,49 +54,15 @@
         </div>
         {% bootstrap_field form.name layout='event' %}
         {% bootstrap_field form.email layout='event' %}
+        <div class="d-flex mb-4">
+            <a href="{{ form.instance.orga_urls.password_reset }}" class="btn btn-info ml-auto">{% trans "Reset password" %}</a>
+        </div>
         {% if form.biography %}{% bootstrap_field form.biography layout='event' %}{% endif %}
         {% bootstrap_field form.availabilities layout='event' %}
-        {% include "orga/submit_row.html" %}
+        {% bootstrap_form questions_form layout='event' %}
+    {% include "orga/submit_row.html" %}
     </form>
 
-    {% if questions %}
-    <legend>{% trans "Answers" %}</legend>
-    <ul>
-    {% for q_info in questions %}
-        {% if q_info.answers.count %}
-        <li>
-            <strong>{{ q_info.question.question }}</strong>
-            {% if q_info.answers.count == 1 %}{% with answer=q_info.answers.first %}
-                -
-                {% if answer.options.count > 0 %}
-                    {% for option in answer.options.all %}
-                    {{ option }},
-                    {% endfor %}
-                {% else %}
-                    {{ answer.answer }}
-                {% endif %}
-                {% if answer.submission %}({{ answer.submission.title }}){% endif %}
-            {% endwith %}{% else %}
-            <ul>
-                {% for answer in q_info.answers %}
-                <li>
-                    {% if answer.options.count > 0 %}
-                        {% for option in answer.options.all %}
-                        {{ option }},
-                        {% endfor %}
-                    {% else %}
-                        {{ answer.answer }}
-                    {% endif %}
-                    {% if answer.submission %}({{ answer.submission.title }}){% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-        </li>
-        {% endif %}
-    {% endfor %}
-    </ul>
-    {% endif %}
 
     <script type="text/javascript" src="{% static "cfp/js/profile.js" %}"></script>
 {% endblock %}

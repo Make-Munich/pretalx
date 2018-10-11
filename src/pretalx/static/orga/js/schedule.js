@@ -4,7 +4,6 @@ var api = {
     var fullHeaders = {}
     fullHeaders['Content-Type'] = 'application/json'
     fullHeaders['X-CSRFToken'] = getCookie('pretalx_csrftoken')
-    console.log(fullHeaders)
 
     let options = {
       method: verb || 'GET',
@@ -79,6 +78,18 @@ var dragController = {
   }
 }
 
+function generateTimesteps(start, interval, intervalunit, end) {
+  var steps = [],
+      d = moment(start);
+
+  while (d < end) {
+    steps.push(moment(d));
+    d.add(interval, intervalunit);
+  }
+
+  return steps;
+}
+
 Vue.component('availability', {
   template: `
     <div class="room-availability" v-bind:style="style"></div>
@@ -105,12 +116,13 @@ Vue.component('availability', {
 
 Vue.component('talk', {
   template: `
-    <div class="talk-box" :class="[talk.state, {dragged: isDragged}]" v-bind:style="style" @mousedown="onMouseDown"
-         :title="title">
+    <div class="talk-box" :class="[talk.state, {dragged: isDragged, warning: displayWarnings}]" v-bind:style="style" @mousedown="onMouseDown"
+         :title="title" data-toggle="tooltip">
       <span class="time" v-if="this.talk.start">
         {{ humanStart }}
       </span>
-      {{ talk.title }} ({{ talk.duration }} minutes)
+      {{ talk.title }}
+      <span v-if="displayWarnings" class="warning-sign"><i class="fa fa-warning"></i></span>
     </div>
   `,
   props: {
@@ -120,7 +132,11 @@ Vue.component('talk', {
   },
   computed: {
     title () {
-      return this.talk.title + ' (' + this.talk.duration + ' minutes)';
+      let title = this.talk.title + ' (' + this.talk.duration + ' minutes)';
+      if (this.displayWarnings) {
+        title = title + '\n' + this.displayWarnings;
+      }
+      return title;
     },
     style () {
       var style = {height: this.talk.duration + 'px'}
@@ -145,6 +161,9 @@ Vue.component('talk', {
     },
     humanStart () {
       return moment.tz(this.talk.start, app.timezone).format('HH:mm')
+    },
+    displayWarnings () {
+      return this.talk.warnings ? this.talk.warnings.map(warning => warning.message).join('\n') : null
     }
 
   },
@@ -160,17 +179,20 @@ Vue.component('talk', {
 
 Vue.component('timestep', {
   template: `
-    <div class="timestep-box" v-bind:style="style" :class="[{midnight: isMidnight}]">
-      {{ isMidnight ? timestep.format("MM-DD") : timestep.format("HH:mm") }}
+    <div class="timestep-box" v-bind:style="style" :class="[{midnight: isMidnight, thin: thin}]">
+      <span v-if="!thin">
+        {{ isMidnight ? timestep.format("MM-DD") : timestep.format("HH:mm") }}
+      </span>
     </div>
   `,
   props: {
     timestep: Object,
     start: Object,
+    thin: Boolean,
   },
   computed: {
     style () {
-      var style = {height: '30px'}
+      var style = {}
       style.transform = 'translatey(' + moment(this.timestep).diff(this.start, 'minutes') + 'px)'
       return style
     },
@@ -187,6 +209,8 @@ Vue.component('room', {
       <div class="room-container" v-bind:style="style" :data-id="room.id">
       <availability v-for="avail in availabilities" :availability="avail" :start="start" :key="avail.id"></availability>
       <talk v-for="talk in myTalks" :talk="talk" :start="start" :key="talk.id"></talk>
+      <timestep v-for="timestep in midnights" :timestep="timestep" :start="start" :thin="true">
+      </timestep>
       </div>
     </div>
   `,
@@ -195,6 +219,7 @@ Vue.component('room', {
     room: Object,
     duration: Number,
     start: Object,
+    end: Object,
   },
   asyncComputed: {
     availabilities () {
@@ -214,6 +239,9 @@ Vue.component('room', {
         element.room === this.room.id
       )
     },
+    midnights () {
+      return generateTimesteps(this.start, 24, 'h', this.end).slice(1);
+    },
     style () {
       return {
         height: this.duration + 'px'
@@ -230,7 +258,7 @@ var app = new Vue({
         <talk ref="draggedTalk" v-if="dragController.draggedTalk && dragController.event" :talk="dragController.draggedTalk" :key="dragController.draggedTalk.id" :is-dragged="true"></talk>
         <div id="timeline">
           <div class="room-container">
-            <timestep v-for="timestep in timesteps" :timestep="timestep" :start="start">
+            <timestep v-for="timestep in timesteps" :timestep="timestep" :start="start" :thin="false">
             </timestep>
           </div>
         </div>
@@ -238,7 +266,7 @@ var app = new Vue({
           <div class="alert alert-danger room-column" v-if="rooms && rooms.length < 1">
             Please configure some rooms first.
           </div>
-          <room v-for="room in rooms" :room="room" :talks="talks" :duration="duration" :start="start" :key="room.id">
+          <room v-for="room in rooms" :room="room" :talks="talks" :duration="duration" :start="start" :end="end" :key="room.id">
           </room>
         </div>
       </div>
@@ -283,14 +311,7 @@ var app = new Vue({
       return this.end.diff(this.start, 'minutes')
     },
     timesteps () {
-      var steps = [],
-          d = moment(this.start);
-
-      while (d < this.end) {
-        steps.push(moment(d));
-        d.add(30, 'm');
-      }
-      return steps;
+      return generateTimesteps(this.start, 30, 'm', this.end);
     },
     filteredTalks() {
       if (!this.talks)

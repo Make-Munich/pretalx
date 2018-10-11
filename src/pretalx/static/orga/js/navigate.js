@@ -1,6 +1,6 @@
 var remoteUrls = [];
 var urls = null;
-fetch(document.getElementById('navigateUrl').getAttribute('remoteUrl')).then((response) => {
+fetch(document.getElementById('navigateUrl').getAttribute('remoteUrl'), {credentials: "same-origin"}).then((response) => {
   response.json().then(response => {
     remoteUrls = response.results.map(element => {return {value: element.url, name: element.name}})
     urls = new Bloodhound({
@@ -25,7 +25,6 @@ fetch(document.getElementById('navigateUrl').getAttribute('remoteUrl')).then((re
     $("#navigate").bind("keypress", function(ev) {
       if (ev.which == 13 /* ENTER */) {
         const typeahead = $(this).data().ttTypeahead;
-        const hintText = typeahead.input.$hint.val();
         const menu = typeahead.menu;
         const sel = menu.getActiveSelectable() || menu.getTopSelectable();
         if (menu.isOpen()) {

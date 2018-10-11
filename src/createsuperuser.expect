@@ -1,0 +1,11 @@
+﻿#!/usr/bin/expect
+
+#Usage createsuperuser.expect <email> <password>
+
+set timeout 60
+
+spawn python3 manage.py createsuperuser
+
+expect "*?-Mail" { send "[lindex $argv 0]\r" }
+expect "*?assword" { send "[lindex $argv 1]\r" }
+expect "*?assword (again)" { send "[lindex $argv 1]\r" }

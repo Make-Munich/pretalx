@@ -1,9 +1,10 @@
 @import "../../common/scss/_variables";
+@import "../../vendored/bootstrap/scss/bootstrap";
+@import "../../common/scss/_font";
 @import "../../common/scss/_flags";
 @import "../../common/scss/_forms";
 @import "../../common/scss/_availabilities";
 @import "../../common/scss/_dashboard";
-@import "../../vendored/bootstrap/scss/bootstrap";
 @import "../../vendored/forkawesome/scss/fork-awesome";
 @import "../../vendored/datetimepicker/_bootstrap-datetimepicker";
 @import "../../common/scss/pretalx";
@@ -38,6 +39,7 @@ h3 {
 
 .adder-textbox {
   $height: 2rem;
+
   padding-top: 2px;
   display: block;
 
@@ -46,6 +48,7 @@ h3 {
     max-width: 250px;
     display: inline-block;
   }
+
   span.twitter-typeahead {
     display: inline !important;
   }
@@ -67,17 +70,18 @@ h3 {
     flex: 1 0 0;
     align-self: stretch;
   }
+
   .flex-sidebar {
     max-width: 240px;
     padding-left: 24px;
 
-    legend {
+    h3 {
       font-size: 16pt;
     }
+
     p {
       margin: 0px 0px 0px 0px;
     }
-
   }
 }
 
@@ -85,14 +89,17 @@ h3 {
   input[type=checkbox] {
     vertical-align: middle;
   }
+
   input[type=email] {
     max-width: 15em;
   }
+
   input[type=number] {
     max-width: 2.5em;
     text-align: center;
   }
 }
+
 .superuser-warning {
   background: $brand-danger;
   padding: 5px 20px;
@@ -107,8 +114,9 @@ h3 {
 
 .submission_featured {
   i {
-    vertical-align: bottom;
-    margin-left: -0.5em;
+    position: absolute;
+    margin-left: 6px;
+    margin-top: -6px;
   }
 
   .done {

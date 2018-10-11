@@ -1,7 +1,6 @@
-import os
 from codecs import open
 from distutils.command.build import build
-from os import path
+from os import environ, path
 
 from setuptools import find_packages, setup
 
@@ -19,7 +18,7 @@ except:  # noqa
 
 class CustomBuild(build):
     def run(self):
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pretalx.settings")
+        environ.setdefault("DJANGO_SETTINGS_MODULE", "pretalx.settings")
         try:
             import django
         except (ImportError, ModuleNotFoundError):
@@ -37,9 +36,7 @@ class CustomBuild(build):
         build.run(self)
 
 
-cmdclass = {
-    'build': CustomBuild
-}
+cmdclass = {'build': CustomBuild}
 
 
 setup(
@@ -53,15 +50,18 @@ setup(
     license='Apache License 2.0',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
+        'Environment :: Web Environment',
+        'Framework :: Django',
+        'Framework :: Django :: 2.0',
         'Intended Audience :: Developers',
         'Intended Audience :: Other Audience',
-        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-        'Environment :: Web Environment',
+        'License :: OSI Approved',
         'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
-        'Framework :: Django :: 2.0'
+        'Programming Language :: Python :: 3.7',
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
-
     keywords='conference cfp event barcamp',
     install_requires=[
         'bleach>=2.1.2,==2.1.*',  # https://bleach.readthedocs.io/en/latest/changes.html
@@ -83,6 +83,7 @@ setup(
         'inlinestyler==0.2.*',  # https://github.com/dlanger/inlinestyler/blob/master/CHANGELOG
         'libsass==0.14.5',  # https://sass.github.io/libsass-python/changes.html
         'Markdown==2.6.*',  # https://python-markdown.github.io/change_log/
+        'publicsuffixlist==0.6.*',
         'pytz',
         'reportlab==3.4.*',  # https://www.reportlab.com/documentation/relnotes/
         'requests',  # http://docs.python-requests.org/en/master/community/updates/#release-history
@@ -106,7 +107,6 @@ setup(
         'mysql': ['mysqlclient'],
         'postgres': ['psycopg2-binary'],
     },
-
     packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,
     cmdclass=cmdclass,

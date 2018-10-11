@@ -3,6 +3,45 @@
 Release Notes
 =============
 
+- :release:`0.8.0 <2018-09-23>`
+- :bug:`-`: When a submission was removed that contained an answered (multiple-) choice question, the selected answer option was removed, too.
+- :bug:`501`: When a speaker held more than two talks, their related talks were not linked correctly.
+- :bug:`505`: Custom CSS may now also include media queries.
+- :bug:`500`: Display of times could be off in the static HTML export.
+- :support:`-` The URLs for schedule exports have changed from /myevent/schedule/export?exporter=exportername to /myevent/schedule/export/exportername – if you have hardcoded links to schedule exporters, please update them accordingly.
+- :feature:`213` A human-readable time until the CfP closes is now displayed next to the end time.
+- :bug:`503` Not all current TLDs were used when processing markdown input to build links.
+- :bug:`-`: The schedule import in the organiser backend never worked (while the manage command for administrators did work).
+- :feature:`454`: As an organizer, it is now possible to send an email to all reviewers in the Compose Mail section.
+- :feature:`492`: In exports, HTTP Etags are now supported to allow for more aggressive caching on clients.
+- :bug:`-` If a review question was mandatory while submission questions were active, they would block the submission process.
+- :feature:`-` Organisers can now also reset the password for the speakers they have access to.
+- :bug:`488` The HTML export contained media files (not other content) from all conferences on an instance, instead of only the exported conference.
+- :feature:`-` Present a public list of talks and a list of speakers.
+- :bug:`478` The behaviour of pressing enter in multi-step forms was unintuitive in some places.
+- :feature:`-` The submission list now includes a graph of submissions over time.
+- :feature:`-` The sneak peek / is_featured flag is now shown in the submissions and talk API endpoints.
+- :feature:`-` You can now use your authentication token to access all pages you have access to, not only the API. This makes integration of exports much easier.
+- :support:`-` All manage commands available in pretalx are now included in the documentation.
+- :feature:`240` When using paper cards to build a schedule, each card comes with a QR code link to a quick scheduling form for that submission.
+- :feature:`-` Before releasing a new schedule, the user is now shown any warnings and what the public changelog will look like.
+- :feature:`214` The schedule editor shows warnings on scheduling conflicts, including live feedback on where a talk can be placed.
+- :feature:`474` The review dashboard now features the same search and filter options as the submission list.
+- :bug:`473` Following the revamp of team permissions, override votes could no longer be configured. This has been corrected, and the general handling of override votes was improved.
+- :support:`-` pretalx now doesn't support usernames any longer – as email addresses were already required for accounts, they are now the only means of logging in. This may confuse a few users – as an administrator, you can look up users' email addresses if they don't remember them, or change them, if necessary.
+- :bug:`-` Questions couldn't be deleted, only made inactive.
+- :feature:`408` You can now add minimum or maximum length restrictions to abstracts, descriptions, speaker biographies, and all text-based questions.
+- :feature:`-` When linking to a talk on social media, the talk image is now shown.
+- :feature:`-` French translation
+- :feature:`-` The event logo is displayed larger and up to the full width of the document below. Please check that your event still looks as intended after upgrading.
+- :feature:`149` Allow to order rooms manually.
+- :feature:`149` Allow to order questions manually.
+- :support:`-` We now have tests to make sure all config options and plugin hooks are documented.
+- :feature:`-` Instead of setting a flag somewhere, pretalx now has an explicit "go live" button. There is also a corresponding signal plugins can listen to (please refer to the plugin documentation for further information).
+- :bug:`463` Don't show a 404 error if a reviewer tries to review their own submission, but show an error message instead.
+- :feature:`-` For organisers, the submission/talk API endpoints now contain the question answers given by the speakers.
+- :feature:`-` Schedules now contain a search bar to filter talks by title or speaker.
+- :feature:`-` Schedules now feature a sidebar navigation to jump directly to a selected day.
 - :feature:`-` Allow organisers to configure which of the default CfP fields to request and require. Please check your settings after updating, as the migration is not guaranteed to work as expected.
 - :feature:`-` Prevent organisers from adding a non-localhost mail server without transport level security to make sure our Privacy Policy holds true.
 - :feature:`415` Allow organisers to trigger a password reset for team members.

@@ -5,7 +5,7 @@ from pretalx.submission.models.submission import SubmissionStates
 
 @rules.predicate
 def can_change_submissions(user, obj):
-    if not user or user.is_anonymous or not obj:
+    if not user or user.is_anonymous or not obj or not hasattr(obj, 'event'):
         return False
     return user.is_administrator or obj.event in user.get_events_for_permission(can_change_submissions=True)
 
@@ -20,7 +20,7 @@ def is_reviewer(user, obj):
 
 @rules.predicate
 def is_administrator(user, obj):
-    return user.is_administrator
+    return getattr(user, 'is_administrator', False)
 
 
 @rules.predicate
